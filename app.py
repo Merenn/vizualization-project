@@ -12,8 +12,8 @@ except FileNotFoundError:
     print("File 'ncr_ride_bookings.csv' not found – exiting.")
     exit(1)
 
-min_allowed_date = pd.Timestamp(f"2024-01-01")
-max_allowed_date = pd.Timestamp(f"2024-12-31")
+min_allowed_date = pd.Timestamp("2024-01-01")
+max_allowed_date = pd.Timestamp("2024-12-31")
 
 app.layout = html.Div(
     style={"fontFamily": "Arial, sans-serif", "margin": "2rem"},
