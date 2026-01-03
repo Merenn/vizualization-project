@@ -1,49 +1,319 @@
-import dash
-from dash import dcc, html
 import pandas as pd
+from dash import Dash, html, dcc, Input, Output
+import plotly.express as px
 
-app = dash.Dash(__name__)
-server = app.server
+# Dataset loading and preprocesing ----------------------------------------------------------
+df = pd.read_csv("ncr_ride_bookings.csv", parse_dates=["Date"])
 
-try:
-    df = pd.read_csv("ncr_ride_bookings.csv")
-    print("Data loaded successfully.")
-except FileNotFoundError:
-    print("File 'ncr_ride_bookings.csv' not found – exiting.")
-    exit(1)
+# Change all object types to categorical types
+for col in df.select_dtypes(include="object"):
+    df[col] = df[col].astype("category")
 
-min_allowed_date = pd.Timestamp("2024-01-01")
-max_allowed_date = pd.Timestamp("2024-12-31")
+# Change Cancelled Rides by Driver / Customer and Incomplete Rides to boolean type
+df["Cancelled Rides by Customer"] = df["Cancelled Rides by Customer"].notna().astype("bool")
+df["Cancelled Rides by Driver"] = df["Cancelled Rides by Driver"].notna().astype("bool")
+df["Incomplete Rides"] = df["Incomplete Rides"].notna().astype("bool")
+
+# Add average speed attribute in km/h
+df["Avg Speed"] = df["Ride Distance"] / (df["Avg CTAT"] / 60)
+
+# Add weekday and hour columns
+df["Weekday"] = df["Date"].dt.day_name()
+df["Hour"] = df["Time"].str.split(":").str[0]
+
+
+# DASH ---------------------------------------------------------------------------------------
+app = Dash(__name__)
 
 app.layout = html.Div(
     style={"fontFamily": "Arial, sans-serif", "margin": "2rem"},
     children=[
+        # title --------------------------------------------------------------------------------------------
         html.H1("Uber Rides Data"),
+        html.P([
+            "The dataset contains rides from 2024 from New Delhi, India. It was taken from ",
+            html.A(
+                "this Kaggle dataset",
+                href="https://www.kaggle.com/datasets/yashdevladdha/uber-ride-analytics-dashboard",
+                target="_blank"
+            ),
+            "."
+        ]),
+        html.Hr(style={"margin-bottom": "10px"}),
 
-        html.Div(
-            [
-                html.Label("Select a date range (within a single year):"),
-                dcc.DatePickerRange(
-                    id="date-range-picker",
-                    min_date_allowed=min_allowed_date,
-                    max_date_allowed=max_allowed_date,
-                    start_date=min_allowed_date,
-                    end_date=max_allowed_date,
-                    display_format="YYYY‑MM‑DD",
-                ),
-            ],
-            style={"marginBottom": "1.5rem"},
-        ),
+        # main part -----------------------------------------------------------------------------------------
+        html.Div(children=[
 
-        dcc.Store(id="filtered-data-store"),
+            html.Div( # rides count
+                html.H2(id="rides-count"),
+                id="rides-count-container"
+            ),
 
-        html.H3("Filtered data preview"),
-        dcc.Markdown(
-            df.head().to_markdown(index=False),  # pandas → markdown table
-            style={"whiteSpace": "pre-wrap"}
-        ),
+
+            html.Div( # Date range picker div
+                children = [
+                    html.Label("Date Range", style={"margin":"5px"}),
+                    dcc.DatePickerRange(
+                        id="date-range-picker",
+                        min_date_allowed=pd.Timestamp("2024-01-01"),
+                        max_date_allowed=pd.Timestamp("2024-12-31"),
+                        start_date=pd.Timestamp("2024-01-01"),
+                        end_date=pd.Timestamp("2024-12-31"),
+                        display_format="YYYY‑MM‑DD",
+                    ),
+                ],
+                style={"margin":"5px"}
+            ),
+
+
+            html.Div(
+                children=[ # Vehicle type checkboxes div
+                    html.Label("Vehicle type"),
+                    dcc.Checklist(
+                        options=[
+                            {"label": "Auto (Auto-rickshaw)", "value": "Auto"},
+                            {"label": "Go Mini (Low-cost small hatchbacks)", "value": "Go Mini"},
+                            {"label": "Go Sedan (Standard sedans)", "value": "Go Sedan"},
+                        {"label": "Bike (Motorcycles)", "value": "Bike"},
+                            {"label": "Premier Sedan (Premium/luxury sedans)", "value": "Premier Sedan"},
+                            {"label": "eBike (Electric motorcycle rides)", "value": "eBike"},
+                            {"label": "Uber XL (Larger vehicles - SUVs or 6–7 seaters)", "value": "Uber XL"}
+                        ],
+                        value=["Auto", "Go Mini", "Go Sedan", "Bike", "Premier Sedan", "eBike", "Uber XL"],
+                        id="vehicle-types-checklist"
+                    )
+                ],
+                style={"margin":"20px 0"}
+            ),
+
+
+
+            html.Div( # Vehicle types barchart
+                children=[
+                    html.H3("Vehicle types barchart"),
+                    dcc.Graph(id="vehicle-types-barchart"),
+                ],
+                id="vehicle-types-barchart-container",
+                style={"margin":"20px 0"}
+            ),
+
+
+            html.Div( # Scatterplot
+                children=[
+                    html.H3("Numerical attributes scatterplot"),
+                    dcc.Dropdown(
+                        options=[
+                            {"label":"Average Time - driver to pickup location", "value":"Avg VTAT"},
+                            {"label":"Average Time - pickup to destination", "value":"Avg CTAT"},
+                            {"label":"Booking Value", "value":"Booking Value"},
+                            {"label":"Ride Distance", "value":"Ride Distance"},
+                            {"label":"Driver Ratings", "value":"Driver Ratings"},
+                            {"label":"Customer Ratings", "value":"Customer Rating"},
+                            {"label":"Average Speed", "value":"Avg Speed"},
+                        ],
+                        value="Ride Distance",
+                        id="scatterplot-x-axis"
+                    ),
+                    dcc.Dropdown(
+                        options=[
+                            {"label":"Average Time - driver to pickup location", "value":"Avg VTAT"},
+                            {"label":"Average Time - pickup to destination", "value":"Avg CTAT"},
+                            {"label":"Booking Value", "value":"Booking Value"},
+                            {"label":"Ride Distance", "value":"Ride Distance"},
+                            {"label":"Driver Ratings", "value":"Driver Ratings"},
+                            {"label":"Customer Ratings", "value":"Customer Rating"},
+                            {"label":"Average Speed", "value":"Avg Speed"},
+                        ],
+                        value="Avg Speed",
+                        id="scatterplot-y-axis"
+                    ),
+                    dcc.Graph(id="scatterplot"),
+                ],
+                id="scatterplot-container",
+                style={"margin": "20px 0"}
+            ),
+
+
+            html.Div( # payment methods piechart
+                children=[
+                    html.H3("Payment methods piechart"),
+                    dcc.Graph(id="payment-piechart")
+                ],
+                id="payment-piechart-container",
+                style={"margin": "20px 0"}
+            ),
+
+
+            html.Div( # Rides volume area chart
+                children=[
+                    html.H3("Rides volume area chart"),
+                    html.Label("Group by"),
+                    dcc.RadioItems(
+                        options=[
+                            {"label": "Date", "value": "Date"},
+                            {"label": "Weekday", "value": "Weekday"},
+                            {"label": "Hour", "value": "Hour"},
+                        ],
+                        value="Date",
+                        id="areachart-group-radio"
+                    ),
+                    dcc.Graph(id="areachart")
+                ],
+                id="areachart-container",
+                style={"margin": "20px 0"}
+            )
+        ])
     ],
 )
 
-if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0", port=8050)
+# Callbacks --------------------------------------------------------------------------
+
+#callback for total rides text
+@app.callback(
+    Output("rides-count", "children"),
+    Input("date-range-picker", "start_date"),
+    Input("date-range-picker", "end_date"),
+    Input("vehicle-types-checklist", "value")
+)
+def update_total_rides(start_date, end_date, vehicle_types):
+    count = len(df[
+        (df["Date"] >= start_date) &
+        (df["Date"] <= end_date) &
+        (df["Vehicle Type"].isin(vehicle_types))
+    ])
+
+    return f"Total rides: {count}"
+
+
+# callback for vehicle type barchart
+@app.callback(
+    Output("vehicle-types-barchart", "figure"),
+    Input("date-range-picker", "start_date"),
+    Input("date-range-picker", "end_date"),
+    Input("vehicle-types-checklist", "value")
+)
+def update_vehicle_types_barchart(start_date, end_date, vehicle_types):
+    filtered_df = df[
+        (df["Date"] >= start_date) &
+        (df["Date"] <= end_date) &
+        (df["Vehicle Type"].isin(vehicle_types))
+    ].groupby("Vehicle Type", observed=True).size().reset_index(name="Count")
+
+    fig = px.bar(
+        filtered_df,
+        x="Vehicle Type",
+        y="Count",
+        color="Vehicle Type",
+    )
+
+    y_limit = (filtered_df["Count"].max() // 5_000 + 1) * 5000
+    fig.update_layout(
+        yaxis=dict(range=[0, y_limit], title="Count"),
+        margin=dict(t=40, l=20, r=20, b=20)
+    )
+    return fig
+
+
+#callback for scatterplot
+@app.callback(
+    Output("scatterplot", "figure"),
+    Input("date-range-picker", "start_date"),
+    Input("date-range-picker", "end_date"),
+    Input("vehicle-types-checklist", "value"),
+    Input("scatterplot-x-axis", "value"),
+    Input("scatterplot-y-axis", "value")
+)
+def update_scatterplot(start_date, end_date, vehicle_types, x_axis_attribute, y_axis_attribute):
+    filtered_df = df[
+        (df["Date"] >= start_date) &
+        (df["Date"] <= end_date) &
+        (df["Vehicle Type"].isin(vehicle_types))
+    ].dropna(subset=[x_axis_attribute, y_axis_attribute]) # drop any row where either is NaN
+
+    fig = px.scatter(
+        filtered_df,
+        x=x_axis_attribute,
+        y=y_axis_attribute
+    )
+
+    fig.update_layout(
+        margin=dict(t=40, l=20, r=20, b=20)
+    )
+
+    return fig
+
+
+# callback for payment method piechart
+@app.callback(
+    Output("payment-piechart", "figure"),
+    Input("date-range-picker", "start_date"),
+    Input("date-range-picker", "end_date"),
+    Input("vehicle-types-checklist", "value"),
+)
+def update_payment_piechart(start_date, end_date, vehicle_types):
+    filtered_df = df[
+        (df["Date"] >= start_date) &
+        (df["Date"] <= end_date) &
+        (df["Vehicle Type"].isin(vehicle_types))
+    ].groupby("Payment Method", observed=True).agg(
+        Count=("Payment Method", "size"),
+        Total_Revenue=("Booking Value", "sum")
+    ).reset_index()
+
+    fig = px.pie(
+        filtered_df,
+        names="Payment Method",
+        values="Count",
+        hole=0.5
+    )
+
+    fig.update_layout(
+        annotations=[
+        dict(
+            text=f"<b>{int(filtered_df["Total_Revenue"].sum()):,} INR</b><br>Total Revenue <br>",
+            x=0.5,
+            y=0.5,
+            font_size=18,
+            showarrow=False,
+            align="center"
+        )
+        ],
+        margin=dict(t=40, l=20, r=20, b=20)
+    )
+
+    return fig
+
+
+# callback for rides volume area chart
+@app.callback(
+    Output("areachart", "figure"),
+    Input("date-range-picker", "start_date"),
+    Input("date-range-picker", "end_date"),
+    Input("vehicle-types-checklist", "value"),
+    Input("areachart-group-radio", "value")
+)
+def update_areachart(start_date, end_date, vehicle_types, grouping):
+    filtered_df = df[
+        (df["Date"] >= start_date) &
+        (df["Date"] <= end_date) &
+        (df["Vehicle Type"].isin(vehicle_types))
+    ].groupby(grouping, observed=True).agg(
+        completed=("Booking Status", lambda x: (x=="Completed").sum()),
+        not_completed=("Booking Status", lambda x: (x!="Completed").sum())
+    ).reset_index()
+
+    filtered_df.columns = [grouping, 'Completed', 'Incomplete or Cancelled']
+
+    fig = px.area(
+        filtered_df,
+        x=grouping,
+        y=filtered_df.columns[1:],
+        labels={"value": "Number of Rides", "variable": "Booking Status"}
+    )
+
+    return fig
+
+
+# Running the app ------------------------------------------------------------
+if __name__ == '__main__':
+    app.run(jupyter_mode="external", debug=True) # inline/tab/external
