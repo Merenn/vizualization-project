@@ -5,8 +5,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="e5368bd9-76bc-4cc8-9d99-2383031234b8" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app.py" beforeDir="false" afterPath="$PROJECT_DIR$/app.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/interactive_notebook.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/interactive_notebook.ipynb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -75,7 +76,8 @@
       <workItem from="1766924965215" duration="6509000" />
       <workItem from="1766933925912" duration="1024000" />
       <workItem from="1766935940232" duration="2270000" />
-      <workItem from="1767707537646" duration="3032000" />
+      <workItem from="1767707537646" duration="4426000" />
+      <workItem from="1767713128328" duration="1957000" />
     </task>
     <servers />
   </component>
@@ -85,11 +87,6 @@
   <component name="XDebuggerManager">
     <breakpoint-manager>
       <breakpoints>
-        <line-breakpoint enabled="true" suspend="THREAD" type="jupyter-line">
-          <url>notebook://C:/Users/miros/Desktop/vizualization-project/interactive_notebook.ipynb</url>
-          <line>304</line>
-          <option name="timeStamp" value="8" />
-        </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="jupyter-line">
           <url>notebook://C:/Users/miros/Desktop/vizualization-project/interactive_notebook.ipynb</url>
           <line>196</line>
@@ -105,15 +102,10 @@
           <line>10</line>
           <option name="timeStamp" value="11" />
         </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="jupyter-line">
-          <url>notebook://C:/Users/miros/Desktop/vizualization-project/interactive_notebook.ipynb</url>
-          <line>230</line>
-          <option name="timeStamp" value="12" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="jupyter-line">
-          <url>notebook://C:/Users/miros/Desktop/vizualization-project/interactive_notebook.ipynb</url>
-          <line>239</line>
-          <option name="timeStamp" value="15" />
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/app.py</url>
+          <line>29</line>
+          <option name="timeStamp" value="20" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>
