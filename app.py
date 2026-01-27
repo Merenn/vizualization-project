@@ -407,15 +407,6 @@ app.layout = html.Div(
 
                     make_cell([html.H3("Vehicle types barchart"),
                               dcc.Graph(id="vehicle-types-barchart")])
-
-                    # html.Div(  # Vehicle types barchart
-                    #     children=[
-                    #         html.H3("Vehicle types barchart"),
-                    #         dcc.Graph(id="vehicle-types-barchart"),
-                    #     ],
-                    #     id="vehicle-types-barchart-container",
-                    #     style={"margin": "20px 0"}
-                    # ),
                 ], width=6),
                 dbc.Col(children=[
                     make_cell([
@@ -430,7 +421,7 @@ app.layout = html.Div(
                                     srcDoc="",  # Filled by callback below
                                     style={
                                         "width": "100%",
-                                        "height": "90vh",
+                                        "height": "50.5rem",
                                         "border": "1px solid #ddd",
                                         "borderRadius": "5px"
                                     }
