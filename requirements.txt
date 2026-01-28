@@ -10,3 +10,4 @@ matplotlib
 pandas
 contextily
 osmnx
+dash-bootstrap-components
