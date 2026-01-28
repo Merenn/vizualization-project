@@ -4,6 +4,7 @@ import io
 from shapely.geometry import LineString
 import matplotlib.pyplot as plt
 import geopandas as gpd
+import matplotlib as mpl
 
 location_to_district = {
     'AIIMS': 'SOUTH',
@@ -171,12 +172,12 @@ location_to_district = {
     'Tis Hazari': 'NORTH',
     'Tughlakabad': 'SOUTH',
     'Udyog Bhawan': 'NEW DELHI',
-    'Udyog Vihar': 'OUTSIDE',  # Gurgaon
+    'Udyog Vihar': 'OUTSIDE',
     'Udyog Vihar Phase 4': 'OUTSIDE',
     'Uttam Nagar': 'WEST',
-    'Vaishali': 'OUTSIDE',  # Ghaziabad
+    'Vaishali': 'OUTSIDE',
     'Vasant Kunj': 'SOUTH',
-    'Vatika Chowk': 'OUTSIDE',  # Gurgaon
+    'Vatika Chowk': 'OUTSIDE',
     'Vidhan Sabha': 'NORTH',
     'Vinobapuri': 'SOUTH',
     'Vishwavidyalaya': 'NORTH',
@@ -184,18 +185,12 @@ location_to_district = {
     'Yamuna Bank': 'EAST'
 }
 
-# Delhi district info, for map
 DISTRICT_SHP = "input/DISTRICT_BOUNDARY.shp"
 gdf = gpd.read_file(DISTRICT_SHP)
-
-# Clean column values
 gdf["District"] = gdf["District"].str.replace(">", "").str.strip()
 gdf["STATE"]    = gdf["STATE"].str.replace(">", "").str.strip()
-
-# Keep only Delhi, project to metric CRS (UTM‑44N)
 DELHI = gdf[gdf["STATE"] == "DELHI"].to_crs(epsg=32644).copy()
 DELHI["centroid"] = DELHI.geometry.centroid
-
 
 def get_admin_region(place):
     return location_to_district.get(place.title().strip(), "UNKNOWN")
@@ -207,67 +202,84 @@ def build_flow_gdf(df_filtered: pd.DataFrame) -> gpd.GeoDataFrame:
     if df_filtered.empty:
         return gpd.GeoDataFrame(
             columns=["Pickup region", "Drop region", "volume", "geometry"],
-            crs = DELHI.crs,
-            geometry = []
+            crs=DELHI.crs,
+            geometry=[],
         )
-
     flows = (
         df_filtered
         .groupby(["Pickup region", "Drop region"])
         .size()
         .reset_index(name="volume")
     )
-
     valid_names = set(DELHI["District"])
     flows = flows[
-        flows["Pickup region"].isin(valid_names) &
-        flows["Drop region"].isin(valid_names)
+        flows["Pickup region"].isin(valid_names)
+        & flows["Drop region"].isin(valid_names)
     ].reset_index(drop=True)
 
     lookup = DELHI.set_index("District")["centroid"]
+
     def make_line(row):
         origin_pt = lookup[row["Pickup region"]]
-        dest_pt   = lookup[row["Drop region"]]
+        dest_pt = lookup[row["Drop region"]]
         return LineString([origin_pt, dest_pt])
 
     flows["geometry"] = flows.apply(make_line, axis=1)
-    gdf_flows = gpd.GeoDataFrame(flows,
-                                 geometry="geometry",
-                                 crs=DELHI.crs)
+    return gpd.GeoDataFrame(flows, geometry="geometry", crs=DELHI.crs)
 
-    return gdf_flows
 
 def render_flow_map(gdf_flows: gpd.GeoDataFrame) -> str:
     fig, ax = plt.subplots(1, 1, figsize=(12, 10))
 
-    DELHI.plot(ax=ax,
-               edgecolor="gray",
-               facecolor="#f0f0f0",
-               linewidth=0.8)
+    DELHI.plot(
+        ax=ax,
+        edgecolor="gray",
+        facecolor="#f0f0f0",
+        linewidth=0.8,
+    )
 
-    # Scale line width by volume
     max_w, min_w = 8, 0.5
     vmin, vmax = gdf_flows["volume"].min(), gdf_flows["volume"].max()
+
     if vmax == vmin:
         lw = pd.Series([max_w] * len(gdf_flows))
     else:
-        lw = (gdf_flows["volume"] - vmin) / (vmax - vmin) * (max_w - min_w) + min_w
+        lw = (
+            (gdf_flows["volume"] - vmin) / (vmax - vmin) * (max_w - min_w) + min_w
+        )
 
+    cmap = "plasma"
     gdf_flows.plot(
         ax=ax,
         linewidth=lw,
         alpha=0.7,
-        cmap="plasma",
+        cmap=cmap,
         column="volume",
-        legend=False  # legend will be added manually later (optional)
+        legend=False,
     )
 
     for _, r in DELHI.iterrows():
-        ax.text(r.centroid.x, r.centroid.y,
-                r.District,
-                ha="center", va="center", fontsize=9,
-                bbox=dict(facecolor="white", edgecolor="none",
-                          pad=0.3, alpha=0.7))
+        ax.text(
+            r.centroid.x,
+            r.centroid.y,
+            r.District,
+            ha="center",
+            va="center",
+            fontsize=9,
+            bbox=dict(facecolor="white", edgecolor="none", pad=0.3, alpha=0.7),
+        )
+
+    norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
+    sm = mpl.cm.ScalarMappable(cmap=cmap, norm=norm)
+    sm.set_array([])
+    cbar = fig.colorbar(
+        sm,
+        ax=ax,
+        orientation="vertical",
+        fraction=0.045,
+        pad=0.04,
+    )
+    cbar.set_label("Ride volume (number of trips)", size=10)
 
     ax.set_axis_off()
     fig.suptitle("Uber rides between Delhi districts", fontsize=16)
