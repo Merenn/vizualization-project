@@ -282,7 +282,6 @@ def render_flow_map(gdf_flows: gpd.GeoDataFrame) -> str:
     cbar.set_label("Ride volume (number of trips)", size=10)
 
     ax.set_axis_off()
-    fig.suptitle("Uber rides between Delhi districts", fontsize=16)
     fig.tight_layout()
 
     buf = io.BytesIO()
