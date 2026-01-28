@@ -374,7 +374,7 @@ app.layout = html.Div(
                                 display_format="YYYY‑MM‑DD",
                             ),
                         ],
-                        style={"margin": "5px"}
+                        style={"margin": "10px"}
                     ),
                         html.Div(
                         children=[  # Vehicle type checkboxes div
@@ -402,7 +402,7 @@ app.layout = html.Div(
                                 switch=True
                             )
                         ],
-                        style={"margin": "20px 0"}
+                        style={"margin": "20px 0 0 0"}
                     )]),
 
                     make_cell([html.H3("Vehicle types barchart"),
@@ -411,8 +411,6 @@ app.layout = html.Div(
                 dbc.Col(children=[
                     make_cell([
                         html.H3("Ride Flow Map Between Delhi Districts"),
-                        html.P(
-                            "Showing movement patterns between different districts of NEW DELHI"),
                         html.Div(
                             id="flow-map-container",
                             children=[
@@ -421,7 +419,7 @@ app.layout = html.Div(
                                     srcDoc="",  # Filled by callback below
                                     style={
                                         "width": "100%",
-                                        "height": "50.5rem",
+                                        "height": "52rem",
                                         "border": "1px solid #ddd",
                                         "borderRadius": "5px"
                                     }
@@ -443,7 +441,6 @@ app.layout = html.Div(
                                 dcc.Graph(id="payment-piechart")
                             ],
                             id="payment-piechart-container",
-                            style={"margin": "20px 0"}
                         )])
                 ], width=5),
                 dbc.Col([
@@ -451,7 +448,7 @@ app.layout = html.Div(
                         html.Div(  # Rides volume area chart
                             children=[
                                 html.H3("Rides volume area chart"),
-                                html.Label("Group by"),
+                                html.Label("Group by", style={"display": "inline"}),
                                 dbc.RadioItems(
                                     options=[
                                         {"label": "Date", "value": "Date"},
@@ -461,12 +458,12 @@ app.layout = html.Div(
                                     value="Date",
                                     id="areachart-group-radio",
                                     inline=True,
-                                    switch=True
+                                    switch=True,
+                                    style={"display": "inline", "margin-left": "10px"},
                                 ),
                                 dcc.Graph(id="areachart")
                             ],
                             id="areachart-container",
-                            style={"margin": "20px 0"}
                         )])
                 ], width=7),
             ]),
