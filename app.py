@@ -1,5 +1,5 @@
 import matplotlib.pyplot as plt
-from dash import Dash, html, dcc, Input, Output
+from dash import Dash, State, html, dcc, Input, Output
 import dash_bootstrap_components as dbc
 import plotly.express as px
 import pandas as pd
@@ -32,6 +32,18 @@ df["Hour"] = df["Time"].str.split(":").str[0]
 df["Pickup region"] = transform_column(df["Pickup Location"])
 df["Drop region"] = transform_column(df["Drop Location"])
 
+
+vehicle_options = [
+    {"label": "Auto (Auto-rickshaw)", "value": "Auto"},
+    {"label": "Go Mini (Hatchbacks)", "value": "Go Mini"},
+    {"label": "Go Sedan (Sedans)", "value": "Go Sedan"},
+    {"label": "Bike (Motorcycles)", "value": "Bike"},
+    {"label": "Premier Sedan (Luxury)", "value": "Premier Sedan"},
+    {"label": "eBike (Electric)", "value": "eBike"},
+    {"label": "Uber XL (SUVs)", "value": "Uber XL"},
+]
+
+
 def make_cell(children):
     return dbc.Card(
         dbc.CardBody([
@@ -40,6 +52,7 @@ def make_cell(children):
         className="shadow mb-4",
         style={"borderRadius": "10px", "border": "1px solid #444"}
     )
+
 
 # DASH ---------------------------------------------------------------------------------------
 app = Dash(__name__, external_stylesheets=[dbc.themes.DARKLY])
@@ -64,52 +77,72 @@ app.layout = html.Div(
         html.Div(children=[
             dbc.Row([
                 dbc.Col(children=[
-                    make_cell([html.Div(  # rides count
-                        html.H2(id="rides-count"),
-                        id="rides-count-container"
-                    ),
+                    make_cell([
+                        html.Div(  # rides count
+                            html.H2(id="rides-count"),
+                            id="rides-count-container"
+                        )]),
+                    make_cell([
                         html.Div(  # Date range picker div
-                        children=[
-                            html.Label("Date Range", style={"margin": "5px"}),
-                            dcc.DatePickerRange(
-                                id="date-range-picker",
-                                min_date_allowed=pd.Timestamp("2024-01-01"),
-                                max_date_allowed=pd.Timestamp("2024-12-31"),
-                                start_date=pd.Timestamp("2024-01-01"),
-                                end_date=pd.Timestamp("2024-12-31"),
-                                display_format="YYYY‑MM‑DD",
-                            ),
-                        ],
-                        style={"margin": "10px"}
-                    ),
+                            children=[
+                                html.Label("Date Range:", style={
+                                           "margin": "5px 10px"}),
+                                dcc.DatePickerRange(
+                                    id="date-range-picker",
+                                    min_date_allowed=pd.Timestamp(
+                                        "2024-01-01"),
+                                    max_date_allowed=pd.Timestamp(
+                                        "2024-12-31"),
+                                    start_date=pd.Timestamp("2024-01-01"),
+                                    end_date=pd.Timestamp("2024-12-31"),
+                                    display_format="YYYY‑MM‑DD",
+                                ),
+                            ],
+                            style={"margin": "10px"}
+                        ),
                         html.Div(
-                        children=[  # Vehicle type checkboxes div
-                            html.Label("Vehicle type"),
-                            dbc.Checklist(
-                                options=[
-                                    {"label": "Auto (Auto-rickshaw)",
-                                     "value": "Auto"},
-                                    {"label": "Go Mini (Low-cost small hatchbacks)",
-                                     "value": "Go Mini"},
-                                    {"label": "Go Sedan (Standard sedans)",
-                                     "value": "Go Sedan"},
-                                    {"label": "Bike (Motorcycles)",
-                                     "value": "Bike"},
-                                    {"label": "Premier Sedan (Premium/luxury sedans)",
-                                     "value": "Premier Sedan"},
-                                    {"label": "eBike (Electric motorcycle rides)",
-                                     "value": "eBike"},
-                                    {"label": "Uber XL (Larger vehicles - SUVs or 6–7 seaters)",
-                                     "value": "Uber XL"}
-                                ],
-                                value=["Auto", "Go Mini", "Go Sedan", "Bike",
-                                       "Premier Sedan", "eBike", "Uber XL"],
-                                id="vehicle-types-checklist",
-                                switch=True
-                            )
-                        ],
-                        style={"margin": "20px 0 0 0"}
-                    )]),
+                            children=[  # Vehicle type checkboxes div
+                                dbc.Row([
+                                    dbc.Col([
+                                        html.Label("Vehicle Type:", className="text-white",
+                                                   style={"margin": "0 10px"})
+                                    ], width="auto", className="d-flex align-items-center"),
+
+                                    dbc.Col([
+                                        dbc.DropdownMenu(
+                                            id="vehicle-filter-label",
+                                            label="All 7 types selected",
+                                            children=[
+                                                dbc.Checklist(
+                                                    id="vehicle-types-checklist",
+                                                    options=vehicle_options,
+                                                    value=[x["value"]
+                                                           for x in vehicle_options],
+                                                    style={"padding": "10px"},
+                                                    inputStyle={
+                                                        "cursor": "pointer"},
+                                                    labelStyle={
+                                                        "cursor": "pointer", "whiteSpace": "nowrap"},
+                                                    switch=True
+                                                )
+                                            ],
+                                            toggle_style={
+                                                "backgroundColor": "#2b303b",
+                                                "border": "1px solid #4a4f5a",
+                                                "borderRadius": "20px",
+                                                "color": "#a0a5b0",
+                                                "fontSize": "0.9rem",
+                                                "padding": "0.3rem 1rem",
+                                                "textTransform": "none"
+                                            },
+                                            color="secondary",
+                                            direction="end", 
+                                        )
+                                    ], width="auto")
+                                ], align="center", className="g-0"),
+                            ],
+                            style={"margin": "20px 0 0 10px"}
+                        )]),
 
                     make_cell([html.H3("Vehicle types barchart"),
                               dcc.Graph(id="vehicle-types-barchart")])
@@ -125,7 +158,7 @@ app.layout = html.Div(
                                     srcDoc="",  # Filled by callback below
                                     style={
                                         "width": "100%",
-                                        "height": "52rem",
+                                        "height": "45.2rem",
                                         "border": "1px solid #ddd",
                                         "borderRadius": "5px"
                                     }
@@ -144,7 +177,8 @@ app.layout = html.Div(
                         html.Div(  # payment methods piechart
                             children=[
                                 html.H3("Payment methods piechart"),
-                                dcc.Graph(id="payment-piechart")
+                                dcc.Graph(id="payment-piechart",
+                                          style={"margin-top": "2rem"})
                             ],
                             id="payment-piechart-container",
                         )])
@@ -154,7 +188,8 @@ app.layout = html.Div(
                         html.Div(  # Rides volume area chart
                             children=[
                                 html.H3("Rides volume area chart"),
-                                html.Label("Group by", style={"display": "inline"}),
+                                html.Label("Group by", style={
+                                           "display": "inline"}),
                                 dbc.RadioItems(
                                     options=[
                                         {"label": "Date", "value": "Date"},
@@ -165,7 +200,8 @@ app.layout = html.Div(
                                     id="areachart-group-radio",
                                     inline=True,
                                     switch=True,
-                                    style={"display": "inline", "margin-left": "10px"},
+                                    style={"display": "inline",
+                                           "margin-left": "10px"},
                                 ),
                                 dcc.Graph(id="areachart")
                             ],
@@ -177,7 +213,7 @@ app.layout = html.Div(
                 children=[
                     html.H3("Numerical attributes scatterplot"),
                     dbc.Row([
-                        dbc.Col([html.Label("X-axis:"), dbc.Select(
+                        dbc.Col([html.Label("X-axis:", style={"display": "inline-block", "margin-right": "0.75rem"}), dbc.Select(
                             options=[
                                 {"label": "Average Time - driver to pickup location",
                                  "value": "Avg VTAT"},
@@ -197,8 +233,9 @@ app.layout = html.Div(
                             value="Ride Distance",
                             id="scatterplot-x-axis",
                             className="bg-dark text-white border-secondary",
+                            style={"display": "inline-block", "width": "auto"}
                         )], width=4),
-                        dbc.Col([html.Label("Y-axis:"), dbc.Select(
+                        dbc.Col([html.Label("Y-axis:", style={"display": "inline-block", "margin-right": "0.75rem"}), dbc.Select(
                             options=[
                                 {"label": "Average Time - driver to pickup location",
                                  "value": "Avg VTAT"},
@@ -217,13 +254,13 @@ app.layout = html.Div(
                             ],
                             value="Avg Speed",
                             id="scatterplot-y-axis",
-                            className="bg-dark text-white border-secondary"
+                            className="bg-dark text-white border-secondary",
+                            style={"display": "inline-block", "width": "auto"}
                         )], width=4),
-                    ]),
+                    ], style={"margin": "1rem 0.5rem 0 0"}),
                     dcc.Graph(id="scatterplot", style={"margin-top": "1rem"}),
                 ],
                 id="scatterplot-container",
-                style={"margin": "20px 0"}
             )),
         ])
     ],
@@ -232,6 +269,26 @@ app.layout = html.Div(
 # Callbacks --------------------------------------------------------------------------
 
 # callback for total rides text
+
+
+@app.callback(
+    Output("vehicle-filter-label", "label"),
+    Input("vehicle-types-checklist", "value"),
+    State("vehicle-types-checklist", "options")
+)
+def update_vehicle_label(selected_values, options):
+    if not selected_values:
+        return "Select a vehicle type..."
+
+    total = len(options)
+    count = len(selected_values)
+
+    if count == total:
+        return f"All {total} types selected"
+    elif count <= 2:
+        return ", ".join(selected_values)
+    else:
+        return f"{count} types selected"
 
 
 @app.callback(
