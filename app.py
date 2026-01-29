@@ -82,7 +82,7 @@ app.layout = html.Div(
                             html.H2(id="rides-count"),
                             id="rides-count-container"
                         )]),
-                        make_cell([
+                    make_cell([
                         html.Div(  # Date range picker div
                             children=[
                                 html.Label("Date Range:", style={
@@ -213,7 +213,7 @@ app.layout = html.Div(
                 children=[
                     html.H3("Numerical attributes scatterplot"),
                     dbc.Row([
-                        dbc.Col([html.Label("X-axis:"), dbc.Select(
+                        dbc.Col([html.Label("X-axis:", style={"display": "inline-block", "margin-right": "0.75rem"}), dbc.Select(
                             options=[
                                 {"label": "Average Time - driver to pickup location",
                                  "value": "Avg VTAT"},
@@ -233,8 +233,9 @@ app.layout = html.Div(
                             value="Ride Distance",
                             id="scatterplot-x-axis",
                             className="bg-dark text-white border-secondary",
+                            style={"display": "inline-block", "width": "auto"}
                         )], width=4),
-                        dbc.Col([html.Label("Y-axis:"), dbc.Select(
+                        dbc.Col([html.Label("Y-axis:", style={"display": "inline-block", "margin-right": "0.75rem"}), dbc.Select(
                             options=[
                                 {"label": "Average Time - driver to pickup location",
                                  "value": "Avg VTAT"},
@@ -253,13 +254,13 @@ app.layout = html.Div(
                             ],
                             value="Avg Speed",
                             id="scatterplot-y-axis",
-                            className="bg-dark text-white border-secondary"
+                            className="bg-dark text-white border-secondary",
+                            style={"display": "inline-block", "width": "auto"}
                         )], width=4),
-                    ]),
+                    ], style={"margin": "1rem 0.5rem 0 0"}),
                     dcc.Graph(id="scatterplot", style={"margin-top": "1rem"}),
                 ],
                 id="scatterplot-container",
-                style={"margin": "20px 0"}
             )),
         ])
     ],
