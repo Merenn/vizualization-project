@@ -144,7 +144,7 @@ app.layout = html.Div(
                         html.Div(  # payment methods piechart
                             children=[
                                 html.H3("Payment methods piechart"),
-                                dcc.Graph(id="payment-piechart")
+                                dcc.Graph(id="payment-piechart", style={"margin-top": "2rem"})
                             ],
                             id="payment-piechart-container",
                         )])
