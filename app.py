@@ -15,7 +15,8 @@ df = pd.read_csv("ncr_ride_bookings.csv", parse_dates=["Date"])
 
 # Change all object types to categorical types
 for col in df.select_dtypes(include="object"):
-    df[col] = df[col].astype("category")
+    if col not in ["Weekday", "Hour"]:
+        df[col] = df[col].astype("category")
 
 # Change Cancelled Rides by Driver / Customer and Incomplete Rides to boolean type
 df["Cancelled Rides by Customer"] = df["Cancelled Rides by Customer"].notna().astype("bool")
